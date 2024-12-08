@@ -1,4 +1,4 @@
-package com.example.userservice.service;
+package com.capysoft.springcloud.mscv.users.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

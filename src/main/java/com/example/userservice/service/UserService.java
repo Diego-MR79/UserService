@@ -1,8 +1,8 @@
 package com.example.userservice.service;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import com.capysoft.springcloud.mscv.users.entities.User;
 import com.capysoft.springcloud.mscv.users.repositories.UserRepository;
@@ -24,11 +24,22 @@ public class UserService {
     }
 
     public User saveUser(User user) {
-        return userRepository.save(user);
+        if (user.getId() == null) {
+            return userRepository.save(user);
+        }
+    
+        Optional<User> existingUser = userRepository.findById(user.getId());
+        if (existingUser.isPresent()) {
+            return userRepository.save(user);
+        }
+        throw new RuntimeException("User with id " + user.getId() + " not found");
     }
 
     public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+        try {
+            userRepository.deleteById(id);
+        } catch (EmptyResultDataAccessException e) {
+            throw new RuntimeException("User with id " + id + " not found");
+        }
     }
 }
-

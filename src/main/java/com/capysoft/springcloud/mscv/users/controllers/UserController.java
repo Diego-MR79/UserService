@@ -1,7 +1,7 @@
 package com.capysoft.springcloud.mscv.users.controllers;
 
 import com.capysoft.springcloud.mscv.users.entities.User;
-import com.example.userservice.service.UserService;
+import com.capysoft.springcloud.mscv.users.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

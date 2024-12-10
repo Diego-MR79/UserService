@@ -42,4 +42,10 @@ public class UserService {
             throw new RuntimeException("User with id " + id + " not found");
         }
     }
+    
+    // Método de autenticación (solo busca por nombre de usuario)
+    public User authenticateUser(String username) {
+        Optional<User> userOpt = userRepository.findByUsername(username);  // Buscar usuario por nombre
+        return userOpt.orElse(null);  // Si no encuentra el usuario, retorna null
+    }
 }

@@ -5,14 +5,19 @@ import com.capysoft.springcloud.mscv.users.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/users")
 public class UserController {
+
     @Autowired
     private UserService userService;
+
+    // Para encriptar contraseñas
+    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @GetMapping
     public List<User> getAllUsers() {
@@ -22,12 +27,18 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
-                .map(ResponseEntity::ok)
+                .map(user -> {
+                    user.setPassword(null);  // Removemos la contraseña antes de devolver el usuario
+                    return ResponseEntity.ok(user);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public User createUser(@RequestBody User user) {
+        // Encriptamos la contraseña antes de guardarla
+        String encryptedPassword = passwordEncoder.encode(user.getPassword());
+        user.setPassword(encryptedPassword);
         return userService.saveUser(user);
     }
 
@@ -36,7 +47,12 @@ public class UserController {
         return userService.getUserById(id)
                 .map(existingUser -> {
                     user.setId(id);
+                    // Si la contraseña se ha actualizado, la encriptamos
+                    if (user.getPassword() != null && !user.getPassword().equals(existingUser.getPassword())) {
+                        user.setPassword(passwordEncoder.encode(user.getPassword()));
+                    }
                     User updatedUser = userService.saveUser(user);
+                    updatedUser.setPassword(null);  // Aseguramos que no se devuelva la contraseña
                     return ResponseEntity.ok(updatedUser);
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -58,12 +74,13 @@ public class UserController {
             return ResponseEntity.status(404).build();
         }
 
-        // Si el usuario existe pero la contraseña no coincide
-        if (!user.getPassword().equals(loginUser.getPassword())) {
+        // Comparamos las contraseñas utilizando BCrypt
+        if (!passwordEncoder.matches(loginUser.getPassword(), user.getPassword())) {
             return ResponseEntity.status(403).build();  // 403 Forbidden: contraseña incorrecta
         }
 
         // Si el usuario y la contraseña coinciden, devolvemos el usuario con un código 200 OK
+        user.setPassword(null);  // Aseguramos que no se devuelva la contraseña
         return ResponseEntity.ok(user);
     }
 }
